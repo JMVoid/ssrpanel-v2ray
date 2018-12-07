@@ -2,11 +2,6 @@
 
 
 
-Echo_Yellow()
-{
-  echo $(Color_Text "$1" "33")
-}
-
 
 Self_Download(){
         sp_ver=`curl --silent "https://api.github.com/repos/JMVoid/ssrpanel-v2ray/releases/latest" |  grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'`
@@ -22,20 +17,16 @@ Self_Download(){
 
 
 V2ray_Download(){
-if [[ $? -eq 0 ]]; then
         v2_ver=`curl --silent "https://api.github.com/repos/v2ray/v2ray-core/releases/latest" |  grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'`
         wget https://github.com/v2ray/v2ray-core/releases/download/$v2_ver/v2ray-linux-${linux_bits}.zip
 
         if [[ $? -eq 0 ]]; then
- 		unzip v2ray-linux-$linxu_bits.zip -d ./v2ray-core
+ 		unzip v2ray-linux-${linux_bits}.zip -d ./v2ray-core
+		chmod u+x ./v2ray-core/*
         else
-                echo "fail to get vadaptor, exit"
+                echo "fail to get v2ray-core, exit"
                 exit 1
         fi
-else
-        echo "fail t get v2ray-core, exit"
-        exit 1
-fi
 }
 
 
@@ -58,22 +49,22 @@ Get_Dist_Name()
         PM='yum'
     elif grep -Eqi "Debian" /etc/issue || grep -Eq "Debian" /etc/*-release; then
         DISTRO='Debian'
-        PM='apt'
+        PM='apt-get'
     elif grep -Eqi "Ubuntu" /etc/issue || grep -Eq "Ubuntu" /etc/*-release; then
         DISTRO='Ubuntu'
-        PM='apt'
+        PM='apt-get'
     elif grep -Eqi "Raspbian" /etc/issue || grep -Eq "Raspbian" /etc/*-release; then
         DISTRO='Raspbian'
-        PM='apt'
+        PM='apt-get'
     elif grep -Eqi "Deepin" /etc/issue || grep -Eq "Deepin" /etc/*-release; then
         DISTRO='Deepin'
-        PM='apt'
+        PM='apt-get'
     elif grep -Eqi "Mint" /etc/issue || grep -Eq "Mint" /etc/*-release; then
         DISTRO='Mint'
-        PM='apt'
+        PM='apt-get'
     elif grep -Eqi "Kali" /etc/issue || grep -Eq "Kali" /etc/*-release; then
         DISTRO='Kali'
-        PM='apt'
+        PM='apt-get'
     else
         DISTRO='unknow'
     fi
@@ -94,7 +85,7 @@ Get_OS_Bit()
 
 Install_OpenJDK()
 {
-  $PM install openjdk-8-jdk
+  $PM install -y openjdk-8-jdk
   if [ $? -ne 0 ]; then
       echo 'fail to install openjdk, exit...'
       exit 1
@@ -103,7 +94,7 @@ Install_OpenJDK()
 }
 
 Install_Wget(){
-  $PM install wget
+  $PM install -y wget
   if [ $? -ne 0 ]; then
       echo 'fail to install wget, exit...'
       exit 1
@@ -111,7 +102,7 @@ Install_Wget(){
 }
 
 Install_Unzip(){
- $PM install unzip
+ $PM install -y unzip
    if [ $? -ne 0 ]; then
       echo 'fail to install unzip, exit...'
       exit 1
@@ -137,12 +128,12 @@ Config_Input(){
 	db_username="root"
 
 	echo "You need to setup up node in ssrpanel first before input node id"
-	read -p "Node ID: " $node_id
+	read -p "Node ID: " node_id
         echo "ssrpanel mysql url like as 123.456.789.888:3306"
-	read -p "ssrpanel mysql url:", $db_url
-	mysql_url=jdbc:mysql://${db_url}/ssrpanel?serverTimezone=GMT%2B8
-        read -p "mysql username:(defalut root)", $db_username
-	read -p "mysql database password:", $db_password
+	read -p "ssrpanel mysql url: " db_url
+	mysql_url="jdbc:mysql:\/\/${db_url}\/ssrpanel?serverTimezone=GMT%2B8"
+        read -p "mysql username(defalut root): " db_username
+	read -p "mysql database password:" db_password
 
 
 	sed -i "s/\(node\.id=\).*\$/\1${node_id}/" config.properties
@@ -152,27 +143,38 @@ Config_Input(){
 	
 }
 
-v2ray_cfg_type=('vmess-kcp-utp','vmess-kcp-wechat')
+v2ray_cfg_type=('vmess-kcp-utp' 'vmess-kcp-wechat')
 
 V2rayConfig_Selection(){
-	cfg_type = "1"
-	Echo_Yellow "You have two options for base v2ray config file"
+	cfg_type="1"
+	echo "You have two options for base v2ray config file"
 	echo "1. Use ${v2ray_cfg_type[0]}"
 	echo "2. Use ${v2ray_cfg_type[1]}"
 	read -p "Enter you choice:" cfg_type
-	cp $cfg_type.json ./v2ray-core/config.json
+	 case "${cfg_type}" in
+    1)
+	cfg_string=${v2ray_cfg_type[0]}
+        ;;
+    2)
+	cfg_string=${v2ray_cfg_type[1]}
+        ;;
+	esac
+	cp ${cfg_string}.json ./v2ray-core/config.json
         
 }
 
-Install_Wget
-Install_OpenJDK
-Install_Unzip
+apt-get update
 
 mkdir -p ssrpanel-v2ray
 cp ssrpanel-v2ray.sh ./ssrpanel-v2ray/
 cd ssrpanel-v2ray
 Get_Dist_Name
 Get_OS_Bit
+
+Install_Wget
+Install_OpenJDK
+Install_Unzip
+
 Self_Download
 V2ray_Download
 Config_Input
