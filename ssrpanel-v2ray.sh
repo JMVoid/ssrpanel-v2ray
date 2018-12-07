@@ -9,8 +9,8 @@ Echo_Yellow()
 
 
 Self_Download(){
-        v2_ver=`curl --silent "https://api.github.com/repos/JMVoid/ssrpanel-v2ray/releases/latest" |  grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'`
-        wget https://github.com/JMVoid/ssrpanel-v2ray/releases/download/$va_ver/ssrpanel-v2ray.tar.gz
+        sp_ver=`curl --silent "https://api.github.com/repos/JMVoid/ssrpanel-v2ray/releases/latest" |  grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'`
+        wget https://github.com/JMVoid/ssrpanel-v2ray/releases/download/$sp_ver/ssrpanel-v2ray.tar.gz
 
         if [[ $? -eq 0 ]]; then
  		tar zxvf ssrpanel-v2ray.tar.gz
@@ -24,7 +24,7 @@ Self_Download(){
 V2ray_Download(){
 if [[ $? -eq 0 ]]; then
         v2_ver=`curl --silent "https://api.github.com/repos/v2ray/v2ray-core/releases/latest" |  grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/'`
-        wget https://github.com/v2ray/v2ray-core/releases/download/$v2_ver/v2ray-linux-$linxu_bits.zip
+        wget https://github.com/v2ray/v2ray-core/releases/download/$v2_ver/v2ray-linux-${linux_bits}.zip
 
         if [[ $? -eq 0 ]]; then
  		unzip v2ray-linux-$linxu_bits.zip -d ./v2ray-core
@@ -92,12 +92,13 @@ Get_OS_Bit()
 }
 
 
-Install_OpenJDK(){
+Install_OpenJDK()
+{
   $PM install openjdk-8-jdk
   if [ $? -ne 0 ]; then
       echo 'fail to install openjdk, exit...'
       exit 1
-  if
+  fi
 	
 }
 
@@ -106,9 +107,16 @@ Install_Wget(){
   if [ $? -ne 0 ]; then
       echo 'fail to install wget, exit...'
       exit 1
-  if
+  fi
 }
 
+Install_Unzip(){
+ $PM install unzip
+   if [ $? -ne 0 ]; then
+      echo 'fail to install unzip, exit...'
+      exit 1
+  fi
+}
 Check_Root(){
 if [ $(id -u) != "0" ]; then
     echo "Error: You must be root to run this script, please use root to install"
@@ -144,7 +152,7 @@ Config_Input(){
 	
 }
 
-v2ray_cfg_type = ('vmess-kcp-utp','vmess-kcp-wechat')
+v2ray_cfg_type=('vmess-kcp-utp','vmess-kcp-wechat')
 
 V2rayConfig_Selection(){
 	cfg_type = "1"
@@ -156,8 +164,15 @@ V2rayConfig_Selection(){
         
 }
 
+Install_Wget
+Install_OpenJDK
+Install_Unzip
 
+mkdir -p ssrpanel-v2ray
+cp ssrpanel-v2ray.sh ./ssrpanel-v2ray/
+cd ssrpanel-v2ray
 Get_Dist_Name
+Get_OS_Bit
 Self_Download
 V2ray_Download
 Config_Input
